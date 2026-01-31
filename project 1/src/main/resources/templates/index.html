@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Phân Tích Đơn Hàng</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/jpeg" href="/images/logo.jpg">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stat-card {
+            transition: transform 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+        }
+
+        .sidebar .nav-link {
+            color: white;
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: #495057;
+        }
+
+        .sidebar .nav-link.active {
+            background-color: #007bff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <img src="/images/logo.jpg" alt="Logo" width="60" height="60" class="mb-2 rounded-circle"
+                            style="object-fit: cover;">
+                        <h5 class="text-white">Order Analytics</h5>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#dashboard" data-section="dashboard">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#upload" data-section="upload">
+                                <i class="fas fa-upload"></i> Tải lên dữ liệu
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#orders" data-section="orders">
+                                <i class="fas fa-list"></i> Danh sách đơn hàng
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#inventory" data-section="inventory">
+                                <i class="fas fa-boxes"></i> Kho hàng
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div
+                    class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" id="pageTitle">Dashboard</h1>
+                </div>
+
+                <div id="dashboard-section" class="content-section">
+                    <div class="row mb-4">
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-primary shadow h-100 py-2 stat-card">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Tổng đơn hàng
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalOrders">0</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-shopping-cart fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-success shadow h-100 py-2 stat-card">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                Tổng doanh thu
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalRevenue">0₫
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-info shadow h-100 py-2 stat-card">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Giá trị trung bình
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="avgOrderValue">0₫
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-warning shadow h-100 py-2 stat-card">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                Đơn hàng thành công
+                                            </div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="deliveredOrders">0
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-check fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Đơn hàng theo trạng thái</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="statusChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Doanh thu theo trạng thái</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="revenueChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Top 10 sản phẩm bán chạy</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="topProductsChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6 mb-4">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Top 10 khách hàng</h6>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="topCustomersChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Đơn hàng gần đây</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="recentOrdersTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã đơn</th>
+                                            <th>Khách hàng</th>
+                                            <th>Sản phẩm</th>
+                                            <th>Số lượng</th>
+                                            <th>Tổng tiền</th>
+                                            <th>Trạng thái</th>
+                                            <th>Ngày đặt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="upload-section" class="content-section" style="display: none;">
+                    <div class="row justify-content-center">
+                        <div class="col-lg-8">
+                            <div class="card shadow">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Tải lên file dữ liệu</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form id="uploadForm" enctype="multipart/form-data">
+                                        <div class="mb-3">
+                                            <label for="fileInput" class="form-label">Chọn file Excel hoặc CSV</label>
+                                            <input type="file" class="form-control" id="fileInput" name="file"
+                                                accept=".xlsx,.xls,.csv" required>
+                                            <div class="form-text">Hỗ trợ file Excel (.xlsx, .xls) và CSV (.csv)</div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-upload"></i> Tải lên
+                                        </button>
+                                    </form>
+                                    <div id="uploadResult" class="mt-3"></div>
+                                </div>
+                            </div>
+
+                            <div class="card shadow mt-4">
+                                <div class="card-header py-3">
+                                    <h6 class="m-0 font-weight-bold text-primary">Hướng dẫn định dạng file</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p>File của bạn cần có các cột sau (có thể dùng tiếng Việt hoặc tiếng Anh):</p>
+                                    <ul>
+                                        <li><strong>Mã đơn hàng / orderCode:</strong> Mã định danh đơn hàng</li>
+                                        <li><strong>Tên khách hàng / customerName:</strong> Tên khách hàng</li>
+                                        <li><strong>Email / customerEmail:</strong> Email khách hàng</li>
+                                        <li><strong>Sản phẩm / productName:</strong> Tên sản phẩm</li>
+                                        <li><strong>Số lượng / quantity:</strong> Số lượng sản phẩm</li>
+                                        <li><strong>Đơn giá / unitPrice:</strong> Đơn giá sản phẩm</li>
+                                        <li><strong>Tổng tiền / totalAmount:</strong> Tổng tiền đơn hàng</li>
+                                        <li><strong>Trạng thái / status:</strong> Trạng thái đơn hàng</li>
+                                        <li><strong>Ngày đặt hàng / orderDate:</strong> Ngày đặt hàng</li>
+                                        <li><strong>Danh mục / category:</strong> Danh mục sản phẩm (tùy chọn)</li>
+                                        <li><strong>Khu vực / region:</strong> Khu vực giao hàng (tùy chọn)</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="orders-section" class="content-section" style="display: none;">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Bộ lọc tìm kiếm</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="filterForm">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="startDate" class="form-label">Từ ngày</label>
+                                        <input type="date" class="form-control" id="startDate">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="endDate" class="form-label">Đến ngày</label>
+                                        <input type="date" class="form-control" id="endDate">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="statusFilter" class="form-label">Trạng thái</label>
+                                        <select class="form-select" id="statusFilter">
+                                            <option value="">Tất cả</option>
+                                            <option value="PENDING">Chờ xử lý</option>
+                                            <option value="CONFIRMED">Đã xác nhận</option>
+                                            <option value="SHIPPED">Đang giao</option>
+                                            <option value="DELIVERED">Đã giao</option>
+                                            <option value="CANCELLED">Đã hủy</option>
+                                            <option value="RETURNED">Đã trả hàng</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="productNameFilter" class="form-label">Sản phẩm</label>
+                                        <input type="text" class="form-control" id="productNameFilter"
+                                            placeholder="Tên sản phẩm">
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-3">
+                                        <label for="customerNameFilter" class="form-label">Khách hàng</label>
+                                        <input type="text" class="form-control" id="customerNameFilter"
+                                            placeholder="Tên khách hàng">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="categoryFilter" class="form-label">Danh mục</label>
+                                        <input type="text" class="form-control" id="categoryFilter"
+                                            placeholder="Danh mục">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="regionFilter" class="form-label">Khu vực</label>
+                                        <input type="text" class="form-control" id="regionFilter" placeholder="Khu vực">
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search"></i> Tìm kiếm
+                                        </button>
+                                        <button type="button" class="btn btn-secondary ms-2" id="clearFilter">
+                                            <i class="fas fa-times"></i> Xóa bộ lọc
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card shadow">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Danh sách đơn hàng</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="ordersTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Mã đơn</th>
+                                            <th>Khách hàng</th>
+                                            <th>Email</th>
+                                            <th>Sản phẩm</th>
+                                            <th>Số lượng</th>
+                                            <th>Đơn giá</th>
+                                            <th>Tổng tiền</th>
+                                            <th>Trạng thái</th>
+                                            <th>Danh mục</th>
+                                            <th>Khu vực</th>
+                                            <th>Ngày đặt</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="inventory-section" class="content-section" style="display: none;">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary">Quản lý kho hàng</h6>
+                            <div>
+                                <button class="btn btn-sm btn-success me-2" onclick="showAddProductModal()">
+                                    <i class="fas fa-plus"></i> Thêm sản phẩm
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="loadInventory()">
+                                    <i class="fas fa-sync"></i> Làm mới
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="inventoryTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Sản phẩm</th>
+                                            <th>Số lượng tồn kho</th>
+                                            <th style="width: 150px;">Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+
+                const section = this.dataset.section;
+                document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
+                document.getElementById(section + '-section').style.display = 'block';
+
+                const titles = {
+                    'dashboard': 'Dashboard',
+                    'upload': 'Tải lên dữ liệu',
+                    'orders': 'Danh sách đơn hàng',
+                    'inventory': 'Kho hàng'
+                };
+                document.getElementById('pageTitle').textContent = titles[section];
+
+                if (section === 'dashboard') {
+                    loadDashboardData();
+                } else if (section === 'inventory') {
+                    loadInventory();
+                }
+            });
+        });
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN') + ' ' + date.toLocaleTimeString('vi-VN');
+        }
+
+        const ordersById = new Map();
+        const ordersTableBody = document.querySelector('#ordersTable tbody');
+
+        const editModalMarkup = `
+            <div class="modal fade" id="editOrderModal" tabindex="-1" aria-labelledby="editOrderLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editOrderLabel">Chinh sua don hang</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="editOrderAlert"></div>
+                            <form id="editOrderForm">
+                                <input type="hidden" id="editOrderId">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="editOrderCode" class="form-label">Ma don hang</label>
+                                        <input type="text" class="form-control" id="editOrderCode" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="editOrderCustomerName" class="form-label">Khach hang</label>
+                                        <input type="text" class="form-control" id="editOrderCustomerName" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="editOrderCustomerEmail" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="editOrderCustomerEmail" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="editOrderProductName" class="form-label">San pham</label>
+                                        <input type="text" class="form-control" id="editOrderProductName" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="editOrderQuantity" class="form-label">So luong</label>
+                                        <input type="number" class="form-control" id="editOrderQuantity" min="1" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="editOrderUnitPrice" class="form-label">Don gia</label>
+                                        <input type="number" class="form-control" id="editOrderUnitPrice" step="0.01" min="0" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="editOrderStatus" class="form-label">Trang thai</label>
+                                        <select class="form-select" id="editOrderStatus" required>
+                                            <option value="PENDING">Cho xu ly</option>
+                                            <option value="CONFIRMED">Da xac nhan</option>
+                                            <option value="SHIPPED">Dang giao</option>
+                                            <option value="DELIVERED">Da giao</option>
+                                            <option value="CANCELLED">Da huy</option>
+                                            <option value="RETURNED">Da tra hang</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="editOrderDate" class="form-label">Ngay dat</label>
+                                        <input type="datetime-local" class="form-control" id="editOrderDate" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="editOrderCategory" class="form-label">Danh muc</label>
+                                        <input type="text" class="form-control" id="editOrderCategory">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="editOrderRegion" class="form-label">Khu vuc</label>
+                                        <input type="text" class="form-control" id="editOrderRegion">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huy</button>
+                            <button type="submit" class="btn btn-primary" form="editOrderForm">Luu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', editModalMarkup);
+
+        const editOrderModal = new bootstrap.Modal(document.getElementById('editOrderModal'));
+        const editOrderForm = document.getElementById('editOrderForm');
+        const editOrderAlert = document.getElementById('editOrderAlert');
+
+        const ordersHeaderRow = document.querySelector('#ordersTable thead tr');
+        if (ordersHeaderRow && !document.getElementById('ordersActionsHeader')) {
+            const actionTh = document.createElement('th');
+            actionTh.id = 'ordersActionsHeader';
+            actionTh.textContent = 'Hành động';
+            ordersHeaderRow.appendChild(actionTh);
+        }
+
+        function toDatetimeLocalValue(dateTimeString) {
+            if (!dateTimeString) return '';
+            if (dateTimeString.length >= 16) return dateTimeString.slice(0, 16);
+            return dateTimeString;
+        }
+
+        function normalizeDateTimeInput(value) {
+            if (!value) return null;
+            return value.length === 16 ? value + ':00' : value;
+        }
+
+        function showEditOrderAlert(type, message) {
+            editOrderAlert.innerHTML = `
+                <div class="alert alert-${type} mb-0">
+                    ${message}
+                </div>
+            `;
+        }
+
+        function fillEditOrderForm(order) {
+            document.getElementById('editOrderId').value = order.id;
+            document.getElementById('editOrderCode').value = order.orderCode || '';
+            document.getElementById('editOrderCustomerName').value = order.customerName || '';
+            document.getElementById('editOrderCustomerEmail').value = order.customerEmail || '';
+            document.getElementById('editOrderProductName').value = order.productName || '';
+            document.getElementById('editOrderQuantity').value = order.quantity ?? '';
+            document.getElementById('editOrderUnitPrice').value = order.unitPrice ?? '';
+            document.getElementById('editOrderStatus').value = order.status || '';
+            document.getElementById('editOrderDate').value = toDatetimeLocalValue(order.orderDate);
+            document.getElementById('editOrderCategory').value = order.category || '';
+            document.getElementById('editOrderRegion').value = order.region || '';
+        }
+
+        editOrderForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const id = document.getElementById('editOrderId').value;
+            const payload = {
+                orderCode: document.getElementById('editOrderCode').value.trim(),
+                customerName: document.getElementById('editOrderCustomerName').value.trim(),
+                customerEmail: document.getElementById('editOrderCustomerEmail').value.trim(),
+                productName: document.getElementById('editOrderProductName').value.trim(),
+                quantity: parseInt(document.getElementById('editOrderQuantity').value, 10),
+                unitPrice: parseFloat(document.getElementById('editOrderUnitPrice').value),
+                status: document.getElementById('editOrderStatus').value,
+                orderDate: normalizeDateTimeInput(document.getElementById('editOrderDate').value),
+                category: document.getElementById('editOrderCategory').value,
+                region: document.getElementById('editOrderRegion').value
+            };
+
+            try {
+                const response = await fetch(`/api/orders/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    showEditOrderAlert('danger', 'Cap nhat that bai.');
+                    return;
+                }
+
+                editOrderModal.hide();
+                await loadOrders();
+                loadDashboardData();
+            } catch (error) {
+                showEditOrderAlert('danger', 'Cap nhat that bai: ' + error.message);
+            }
+        });
+
+        ordersTableBody.addEventListener('click', async function (e) {
+            const actionButton = e.target.closest('button[data-action]');
+            if (!actionButton) return;
+
+            const action = actionButton.getAttribute('data-action');
+            const id = actionButton.getAttribute('data-id');
+            const order = ordersById.get(id);
+
+            if (!order) return;
+
+            if (action === 'edit') {
+                editOrderAlert.innerHTML = '';
+                fillEditOrderForm(order);
+                editOrderModal.show();
+                return;
+            }
+
+            if (action === 'delete') {
+                const confirmed = confirm(`Xoa don hang ${order.orderCode}?`);
+                if (!confirmed) return;
+
+                try {
+                    const response = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
+                    if (!response.ok) {
+                        alert('Xoa that bai.');
+                        return;
+                    }
+                    await loadOrders();
+                    loadDashboardData();
+                } catch (error) {
+                    alert('Xoa that bai: ' + error.message);
+                }
+            }
+        });
+
+        async function loadDashboardData() {
+            try {
+                const response = await fetch('/api/dashboard');
+                const data = await response.json();
+
+                const stats = data.statistics;
+
+                document.getElementById('totalOrders').textContent = stats.totalOrders.toLocaleString('vi-VN');
+                document.getElementById('totalRevenue').textContent = formatCurrency(stats.totalRevenue);
+                document.getElementById('avgOrderValue').textContent = formatCurrency(stats.averageOrderValue);
+                document.getElementById('deliveredOrders').textContent = stats.ordersByStatus['Đã giao'] || 0;
+
+                updateStatusChart(stats.ordersByStatus);
+                updateRevenueChart(stats.revenueByStatus);
+                updateTopProductsChart(stats.topProducts);
+                updateTopCustomersChart(stats.topCustomers);
+
+                updateRecentOrdersTable(data.recentOrders);
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        function updateStatusChart(data) {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(data),
+                    datasets: [{
+                        data: Object.values(data),
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF',
+                            '#FF9F40'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateRevenueChart(data) {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(data),
+                    datasets: [{
+                        data: Object.values(data),
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF',
+                            '#FF9F40'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTopProductsChart(data) {
+            const ctx = document.getElementById('topProductsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(p => p.productName),
+                    datasets: [{
+                        label: 'Số lượng',
+                        data: data.map(p => p.totalQuantity),
+                        backgroundColor: '#36A2EB'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateTopCustomersChart(data) {
+            const ctx = document.getElementById('topCustomersChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(c => c.customerName),
+                    datasets: [{
+                        label: 'Tổng chi tiêu',
+                        data: data.map(c => c.totalSpent),
+                        backgroundColor: '#FF6384'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateRecentOrdersTable(orders) {
+            const tbody = document.querySelector('#recentOrdersTable tbody');
+            tbody.innerHTML = '';
+
+            orders.forEach(order => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${order.orderCode}</td>
+                    <td>${order.customerName}</td>
+                    <td>${order.productName}</td>
+                    <td>${order.quantity}</td>
+                    <td>${formatCurrency(order.totalAmount)}</td>
+                    <td><span class="badge bg-info">${order.status}</span></td>
+                    <td>${formatDate(order.orderDate)}</td>
+                `;
+            });
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tải lên...';
+
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                const resultDiv = document.getElementById('uploadResult');
+
+                if (result.success) {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i> ${result.message}
+                            <br>Đã xử lý ${result.ordersCount} đơn hàng.
+                        </div>
+                    `;
+                    document.getElementById('fileInput').value = '';
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> ${result.message}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('uploadResult').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> Lỗi: ${error.message}
+                    </div>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+
+        document.getElementById('filterForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            await loadOrders();
+        });
+
+        document.getElementById('clearFilter').addEventListener('click', function () {
+            document.getElementById('filterForm').reset();
+            loadOrders();
+        });
+
+        async function loadOrders() {
+            const params = new URLSearchParams();
+
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            const status = document.getElementById('statusFilter').value;
+            const productName = document.getElementById('productNameFilter').value;
+            const customerName = document.getElementById('customerNameFilter').value;
+            const category = document.getElementById('categoryFilter').value;
+            const region = document.getElementById('regionFilter').value;
+
+            if (startDate) params.append('startDate', startDate);
+            if (endDate) params.append('endDate', endDate);
+            if (status) params.append('status', status);
+            if (productName) params.append('productName', productName);
+            if (customerName) params.append('customerName', customerName);
+            if (category) params.append('category', category);
+            if (region) params.append('region', region);
+
+            try {
+                const response = await fetch('/api/orders?' + params.toString());
+                const orders = await response.json();
+
+                updateOrdersTable(orders);
+            } catch (error) {
+                console.error('Error loading orders:', error);
+            }
+        }
+
+        function updateOrdersTable(orders) {
+            ordersById.clear();
+            ordersTableBody.innerHTML = '';
+
+            orders.forEach(order => {
+                ordersById.set(String(order.id), order);
+                const row = ordersTableBody.insertRow();
+                row.innerHTML = `
+                    <td>${order.orderCode}</td>
+                    <td>${order.customerName}</td>
+                    <td>${order.customerEmail}</td>
+                    <td>${order.productName}</td>
+                    <td>${order.quantity}</td>
+                    <td>${formatCurrency(order.unitPrice)}</td>
+                    <td>${formatCurrency(order.totalAmount)}</td>
+                    <td><span class="badge bg-info">${order.status}</span></td>
+                    <td>${order.category || '-'}</td>
+                    <td>${order.region || '-'}</td>
+                    <td>${formatDate(order.orderDate)}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-primary me-2" data-action="edit" data-id="${order.id}">Chinh sua</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete" data-id="${order.id}">Xoa</button>
+                    </td>
+                `;
+            });
+        }
+
+        loadDashboardData();
+
+        async function loadInventory() {
+            try {
+                const response = await fetch('/api/products');
+                const products = await response.json();
+                updateInventoryTable(products);
+            } catch (error) {
+                console.error('Error loading inventory:', error);
+            }
+        }
+
+        function updateInventoryTable(products) {
+            const tbody = document.querySelector('#inventoryTable tbody');
+            tbody.innerHTML = '';
+
+            products.forEach(product => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${product.name}</td>
+                    <td>${product.stockQuantity}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="editStock(${product.id}, '${product.name}', ${product.stockQuantity})">
+                            <i class="fas fa-edit"></i> Sửa kho
+                        </button>
+                    </td>
+                `;
+            });
+        }
+
+        function editStock(id, name, currentStock) {
+            const newStock = prompt(`Nhập số lượng mới cho ${name}:`, currentStock);
+            if (newStock !== null) {
+                const quantity = parseInt(newStock, 10);
+                if (isNaN(quantity)) {
+                    alert('Vui lòng nhập số hợp lệ');
+                    return;
+                }
+                updateStock(id, quantity);
+            }
+        }
+
+        async function updateStock(id, quantity) {
+            try {
+                const response = await fetch(`/api/products/${id}/stock`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ quantity: quantity })
+                });
+
+                if (response.ok) {
+                    loadInventory();
+                } else {
+                    alert('Cập nhật thất bại');
+                }
+            } catch (error) {
+                console.error('Error updating stock:', error);
+                alert('Cập nhật thất bại');
+            }
+        }
+
+        const addProductModalMarkup = `
+            <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Thêm sản phẩm mới</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="addProductForm">
+                                <div class="mb-3">
+                                    <label class="form-label">Tên sản phẩm</label>
+                                    <input type="text" class="form-control" name="name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Số lượng tồn kho</label>
+                                    <input type="number" class="form-control" name="stockQuantity" min="0" required>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                            <button type="button" class="btn btn-primary" onclick="submitAddProduct()">Lưu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', addProductModalMarkup);
+        const addProductModal = new bootstrap.Modal(document.getElementById('addProductModal'));
+
+        function showAddProductModal() {
+            document.getElementById('addProductForm').reset();
+            addProductModal.show();
+        }
+
+        async function submitAddProduct() {
+            const form = document.getElementById('addProductForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const formData = new FormData(form);
+            const data = {
+                name: formData.get('name'),
+                stockQuantity: parseInt(formData.get('stockQuantity'))
+            };
+
+            try {
+                const response = await fetch('/api/products', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    addProductModal.hide();
+                    loadInventory();
+                    alert('Thêm sản phẩm thành công!');
+                } else {
+                    alert('Lỗi khi thêm sản phẩm');
+                }
+            } catch (error) {
+                console.error('Error adding product:', error);
+                alert('Lỗi hệ thống');
+            }
+        }
+    </script>
+</body>
+
+</html>
